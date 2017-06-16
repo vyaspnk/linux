@@ -1,0 +1,294 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf810
+{\fonttbl\f0\fnil\fcharset0 Verdana;\f1\fmodern\fcharset0 CourierNewPSMT;\f2\fmodern\fcharset0 CourierNewPS-BoldMT;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red255\green255\blue255;\red133\green0\blue2;
+\red159\green159\blue159;\red109\green109\blue109;\red10\green82\blue135;\red251\green0\blue129;\red0\green0\blue255;
+\red255\green255\blue193;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c100000\c100000\c100000;\cssrgb\c60000\c0\c0;
+\cssrgb\c68627\c68627\c68627;\cssrgb\c50196\c50196\c50196;\cssrgb\c0\c40000\c60000;\cssrgb\c100000\c7843\c57647;\cssrgb\c0\c0\c100000;
+\cssrgb\c100000\c100000\c80000;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}.}{\leveltext\leveltemplateid1\'02\'00.;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\margl1440\margr1440\vieww11820\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sl580\sa321\partightenfactor0
+
+\f0\b\fs48 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Shared libraries with GCC on Linux\
+\pard\pardeftab720\sl300\partightenfactor0
+
+\b0\fs24 \cf2 By anduril462\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+\cf2 Libraries are an indispensable tool for any programmer. They are pre-existing code that is compiled and ready for you to use. They often provide generic functionality, like {\field{\*\fldinst{HYPERLINK "http://www.cprogramming.com/tutorial/lesson15.html"}}{\fldrslt \cf4 \strokec4 linked lists}} or {\field{\*\fldinst{HYPERLINK "http://www.cprogramming.com/tutorial/lesson18.html"}}{\fldrslt \cf4 \strokec4 binary trees}} that can hold any data, or specific functionality like an interface to a {\field{\*\fldinst{HYPERLINK "http://www.cprogramming.com/tutorial/c++_database_access_using_ado.html"}}{\fldrslt \cf4 \strokec4 database server}} such as {\field{\*\fldinst{HYPERLINK "http://www.mysql.com/"}}{\fldrslt \cf4 \strokec4 MySQL}}.\
+Most larger software projects will contain several components, some of which you may find use for later on in some other project, or that you just want to separate out for organizational purposes. When you have a reusable or logically distinct set of functions, it is helpful to build a library from it so that you don\'92t have to copy the source code into your current project and recompile it all the time\'96and so you can keep different modules of your program disjoint and change one without affecting others. Once it\'92s been written and tested, you can safely reuse it over and over again, saving the time and hassle of building it into your project every time.\
+Building static libraries is fairly simple, and since we rarely get questions on them, I won\'92t cover them. I\'92ll stick with shared libraries, which seem to be more confusing for most people.\
+Before we get started, it might help to get a quick rundown of everything that happens from source code to running program:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sl300\partightenfactor0
+\ls1\ilvl0\cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1.	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 C Preprocessor: This stage processes all the {\field{\*\fldinst{HYPERLINK "http://www.cprogramming.com/tutorial/cpreprocessor.html"}}{\fldrslt \cf4 \strokec4 preprocessor directives}}. Basically, any line that starts with a #, such as #define and #include.\cb1 \
+\ls1\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2.	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Compilation Proper: Once the source file has been preprocessed, the result is then compiled. Since many people refer to the {\field{\*\fldinst{HYPERLINK "http://www.cprogramming.com/compilingandlinking.html"}}{\fldrslt \cf4 \strokec4 entire build process}} as compilation, this stage is often referred to as \'93compilation proper.\'94 This stage turns a .c file into an .o (object) file.\cb1 \
+\ls1\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3.	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Linking: Here is where all of the object files and any libraries are linked together to make your final program. Note that for static libraries, the actual library is placed in your final program, while for shared libraries, only a reference to the library is placed inside. Now you have a complete program that is ready to run. You launch it from the shell, and the program is handed off to the loader.\cb1 \
+\ls1\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	4.	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Loading: This stage happens when your program starts up. Your program is scanned for references to shared libraries. Any references found are resolved and the libraries are mapped into your program.\cb1 \
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+\cf2 \cb3 Steps 3 and 4 are where the magic (and confusion) happens with shared libraries.\
+Now, on to our (very simple) example.\
+\pard\pardeftab720\sl440\sa298\partightenfactor0
+
+\b\fs36 \cf2 foo.h:\
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalt\clvertalbase \clshdrawnil \clwWidth580\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl0 \clpadr0 \gaph\cellx4320
+\clvertalt\clvertalbase \clshdrawnil \clwWidth16200\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl0 \clpadr0 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\sl264\qr\partightenfactor0
+
+\f1\b0\fs24 \cf5 \strokec5 1\
+2\
+3\
+4\
+5\
+6\cell 
+\pard\intbl\itap1\pardeftab720\sl264\partightenfactor0
+\cf6 \strokec6 #ifndef foo_h__\cf2 \strokec2 \
+\cf6 \strokec6 #define foo_h__\cf2 \strokec2 \
+\'a0\
+\pard\intbl\itap1\pardeftab720\sl264\partightenfactor0
+
+\f2\b \cf7 \strokec7 extern
+\f1\b0 \cf2 \strokec2  
+\f2\b \cf7 \strokec7 void
+\f1\b0 \cf2 \strokec2  foo(
+\f2\b \cf7 \strokec7 void
+\f1\b0 \cf2 \strokec2 );\
+\'a0\
+\pard\intbl\itap1\pardeftab720\sl264\partightenfactor0
+\cf6 \strokec6 #endif\'a0 // foo_h__\cf2 \strokec2 \cell \lastrow\row
+\pard\pardeftab720\sl440\sa298\partightenfactor0
+
+\f0\b\fs36 \cf2 foo.c:\
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalt\clvertalbase \clshdrawnil \clwWidth580\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl0 \clpadr0 \gaph\cellx4320
+\clvertalt\clvertalbase \clshdrawnil \clwWidth16200\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl0 \clpadr0 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\sl264\qr\partightenfactor0
+
+\f1\b0\fs24 \cf5 \strokec5 1\
+2\
+3\
+4\
+5\
+6\
+7\cell 
+\pard\intbl\itap1\pardeftab720\sl264\partightenfactor0
+\cf6 \strokec6 #include <stdio.h>\cf2 \strokec2 \
+\'a0\
+\'a0\
+\pard\intbl\itap1\pardeftab720\sl264\partightenfactor0
+
+\f2\b \cf7 \strokec7 void
+\f1\b0 \cf2 \strokec2  foo(
+\f2\b \cf7 \strokec7 void
+\f1\b0 \cf2 \strokec2 )\
+\{\
+\'a0\'a0\'a0\'a0
+\f2\b \cf8 \strokec8 puts
+\f1\b0 \cf2 \strokec2 (\cf9 \strokec9 "Hello, I'm a shared library"\cf2 \strokec2 );\
+\}\cell \lastrow\row
+\pard\pardeftab720\sl440\sa298\partightenfactor0
+
+\f0\b\fs36 \cf2 main.c:\
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalt\clvertalbase \clshdrawnil \clwWidth580\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl0 \clpadr0 \gaph\cellx4320
+\clvertalt\clvertalbase \clshdrawnil \clwWidth16200\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl0 \clpadr0 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\sl264\qr\partightenfactor0
+
+\f1\b0\fs24 \cf5 \strokec5 1\
+2\
+3\
+4\
+5\
+6\
+7\
+8\
+9\cell 
+\pard\intbl\itap1\pardeftab720\sl264\partightenfactor0
+\cf6 \strokec6 #include <stdio.h>\cf2 \strokec2 \
+\cf6 \strokec6 #include "foo.h"\cf2 \strokec2 \
+\'a0\
+\pard\intbl\itap1\pardeftab720\sl264\partightenfactor0
+
+\f2\b \cf6 \strokec6 int
+\f1\b0 \cf2 \strokec2  main(
+\f2\b \cf7 \strokec7 void
+\f1\b0 \cf2 \strokec2 )\
+\{\
+\'a0\'a0\'a0\'a0
+\f2\b \cf8 \strokec8 puts
+\f1\b0 \cf2 \strokec2 (\cf9 \strokec9 "This is a shared library test..."\cf2 \strokec2 );\
+\'a0\'a0\'a0\'a0foo();\
+\'a0\'a0\'a0\'a0
+\f2\b \cf7 \strokec7 return
+\f1\b0 \cf2 \strokec2  0;\
+\}\cell \lastrow\row
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 foo.h defines the interface to our library, a single function, foo(). foo.c contains the implementation of that function, and main.c is a driver program that uses our library.\
+For the purposes of this example, everything will happen in /home/username/foo\
+\pard\pardeftab720\sl440\sa298\partightenfactor0
+
+\b\fs36 \cf2 \
+Step 1: Compiling with Position Independent Code\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\b0\fs24 \cf2 We need to compile our library source code into position-independent code (PIC):{\field{\*\fldinst{HYPERLINK "http://www.cprogramming.com/tutorial/shared-libraries-linux-gcc.html#fn:1"}}{\fldrslt 
+\fs20 \cf4 \super \strokec4 1}}\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ gcc -c -Wall -Werror -fpic foo.c\
+\pard\pardeftab720\sl440\sa298\partightenfactor0
+
+\f0\b\fs36 \cf2 \cb3 Step 2: Creating a shared library from an object file\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\b0\fs24 \cf2 Now we need to actually turn this object file into a shared library. We\'92ll call it libfoo.so:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 gcc -shared -o libfoo.so foo.o\
+\pard\pardeftab720\sl440\sa298\partightenfactor0
+
+\f0\b\fs36 \cf2 \cb3 Step 3: Linking with a shared library\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\b0\fs24 \cf2 As you can see, that was actually pretty easy. We have a shared library. Let\'92s compile our main.c and link it with libfoo. We\'92ll call our final program \'93test.\'94 Note that the -lfoo option is not looking for foo.o, but libfoo.so. GCC assumes that all libraries start with \'91lib\'92 and end with .so or .a (.so is for shared object or shared libraries, and .a is for archive, or statically linked libraries).\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ gcc -Wall -o test main.c -lfoo\
+/usr/bin/ld: cannot find -lfoo\
+collect2: ld returned 1 exit status\
+\pard\pardeftab720\sl340\sa280\partightenfactor0
+
+\f0\b\fs28 \cf2 \cb3 Telling GCC where to find the shared library\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\b0\fs24 \cf2 Uh-oh! The linker doesn\'92t know where to find libfoo. GCC has a list of places it looks by default, but our directory is not in that list.{\field{\*\fldinst{HYPERLINK "http://www.cprogramming.com/tutorial/shared-libraries-linux-gcc.html#fn:2"}}{\fldrslt 
+\fs20 \cf4 \super \strokec4 2}} We need to tell GCC where to find libfoo.so. We will do that with the -L option. In this example, we will use the current directory, /home/username/foo:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ gcc -L/home/username/foo -Wall -o test main.c -lfoo\
+\pard\pardeftab720\sl440\sa298\partightenfactor0
+
+\f0\b\fs36 \cf2 \cb3 Step 4: Making the library available at runtime\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\b0\fs24 \cf2 Good, no errors. Now let\'92s run our program:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ ./test\
+./test: error while loading shared libraries: libfoo.so: cannot open shared object file: No such file or directory\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 Oh no! The loader can\'92t find the shared library.{\field{\*\fldinst{HYPERLINK "http://www.cprogramming.com/tutorial/shared-libraries-linux-gcc.html#fn:3"}}{\fldrslt 
+\fs20 \cf4 \super \strokec4 3}} We didn\'92t install it in a standard location, so we need to give the loader a little help. We have a couple of options: we can use the environment variable LD_LIBRARY_PATH for this, or rpath. Let\'92s take a look first at LD_LIBRARY_PATH:\
+\pard\pardeftab720\sl340\sa280\partightenfactor0
+
+\b\fs28 \cf2 Using LD_LIBRARY_PATH\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\b0\fs24 \cf2 \cb10 $ echo $LD_LIBRARY_PATH\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 There\'92s nothing in there. Let\'92s fix that by prepending our working directory to the existing LD_LIBRARY_PATH:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ LD_LIBRARY_PATH=/home/username/foo:$LD_LIBRARY_PATH\
+$ ./test\
+./test: error while loading shared libraries: libfoo.so: cannot open shared object file: No such file or directory\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 What happened? Our directory is in LD_LIBRARY_PATH, but we didn\'92t export it. In Linux, if you don\'92t export the changes to an environment variable, they won\'92t be inherited by the child processes. The loader and our test program didn\'92t inherit the changes we made. Thankfully, the fix is easy:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ export LD_LIBRARY_PATH=/home/username/foo:$LD_LIBRARY_PATH\
+$ ./test\
+This is a shared library test...\
+Hello, I'm a shared library\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 Good, it worked! LD_LIBRARY_PATH is great for quick tests and for systems on which you don\'92t have admin privileges. As a downside, however, exporting the LD_LIBRARY_PATH variable means it may cause problems with other programs you run that also rely on LD_LIBRARY_PATH if you don\'92t reset it to its previous state when you\'92re done.\
+\pard\pardeftab720\sl340\sa280\partightenfactor0
+
+\b\fs28 \cf2 Using rpath\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\b0\fs24 \cf2 Now let\'92s try rpath (first we\'92ll clear LD_LIBRARY_PATH to ensure it\'92s rpath that\'92s finding our library). Rpath, or the run path, is a way of embedding the location of shared libraries in the executable itself, instead of relying on default locations or environment variables. We do this during the linking stage. Notice the lengthy \'93-Wl,-rpath=/home/username/foo\'94 option. The -Wl portion sends comma-separated options to the linker, so we tell it to send the -rpath option to the linker with our working directory.\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ unset LD_LIBRARY_PATH\
+$ gcc -L/home/username/foo -Wl,-rpath=/home/username/foo -Wall -o test main.c -lfoo\
+$ ./test\
+This is a shared library test...\
+Hello, I'm a shared library\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 Excellent, it worked. The rpath method is great because each program gets to list its shared library locations independently, so there are no issues with different programs looking in the wrong paths like there were for LD_LIBRARY_PATH.\
+\pard\pardeftab720\sl300\sa319\partightenfactor0
+
+\b \cf2 rpath vs. LD_LIBRARY_PATH\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\b0 \cf2 There are a few downsides to rpath, however. First, it requires that shared libraries be installed in a fixed location so that all users of your program will have access to those libraries in those locations. That means less flexibility in system configuration. Second, if that library refers to a NFS mount or other network drive, you may experience undesirable delays\'96or worse\'96on program startup.\
+\pard\pardeftab720\sl340\sa280\partightenfactor0
+
+\b\fs28 \cf2 Using ldconfig to modify ld.so\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\b0\fs24 \cf2 What if we want to install our library so everybody on the system can use it? For that, you will need admin privileges. You will need this for two reasons: first, to put the library in a standard location, probably /usr/lib or /usr/local/lib, which normal users don\'92t have write access to. Second, you will need to modify the ld.so config file and cache. As root, do the following:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ cp /home/username/foo/libfoo.so /usr/lib\
+$ chmod 0755 /usr/lib/libfoo.so\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 Now the file is in a standard location, with correct permissions, readable by everybody. We need to tell the loader it\'92s available for use, so let\'92s update the cache:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ ldconfig\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 That should create a link to our shared library and update the cache so it\'92s available for immediate use. Let\'92s double check:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ ldconfig -p | grep foo\
+libfoo.so (libc6) => /usr/lib/libfoo.so\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 Now our library is installed. Before we test it, we have to clean up a few things:\
+Clear our LD_LIBRARY_PATH once more, just in case:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ unset LD_LIBRARY_PATH\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 Re-link our executable. Notice we don\'92t need the -L option since our library is stored in a default location and we aren\'92t using the rpath option:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ gcc -Wall -o test main.c -lfoo\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 Let\'92s make sure we\'92re using the /usr/lib instance of our library using ldd:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ ldd test | grep foo\
+libfoo.so => /usr/lib/libfoo.so (0x00a42000)\
+\pard\pardeftab720\sl300\sa240\partightenfactor0
+
+\f0 \cf2 \cb3 Good, now let\'92s run it:\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \cb10 $ ./test\
+This is a shared library test...\
+Hello, I'm a shared library\
+}
